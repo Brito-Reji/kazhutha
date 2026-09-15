@@ -1,16 +1,18 @@
-import React from 'react';
-import { LogOut, Flag } from 'lucide-react';
+import React, { useState } from 'react';
+import { LogOut, Flag, HelpCircle } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { Card } from '../components/Card';
 import { PlayerAvatar } from '../components/PlayerAvatar';
+import { HowToPlayModal } from '../components/HowToPlayModal';
 import type { Card as CardType } from '../types';
 
 export const GamePage: React.FC = () => {
   const { room, playerId, playCard, leaveRoom, declareMalathi, error } = useSocket();
 
-  const [isPlayingCard, setIsPlayingCard] = React.useState(false);
-  const [showQuitConfirm, setShowQuitConfirm] = React.useState(false);
-  const [showMalathiConfirm, setShowMalathiConfirm] = React.useState(false);
+  const [isPlayingCard, setIsPlayingCard] = useState(false);
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const [showMalathiConfirm, setShowMalathiConfirm] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   React.useEffect(() => {
     setIsPlayingCard(false);
@@ -76,6 +78,15 @@ export const GamePage: React.FC = () => {
             <span className="text-xs text-slate-400 font-mono">ROOM:</span>
             <span className="text-xs sm:text-sm font-mono font-bold text-amber-400">{room.id}</span>
           </div>
+
+          <button
+            onClick={() => setShowHowToPlay(true)}
+            className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+            title="How to Play"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+            <span>Rules</span>
+          </button>
 
           {canDeclareMalathi && (
             <button
@@ -297,6 +308,8 @@ export const GamePage: React.FC = () => {
           </>
         )}
       </div>
+
+      <HowToPlayModal isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSocket } from '../context/SocketContext';
+import { HowToPlayModal } from '../components/HowToPlayModal';
 
 interface LandingPageProps {
   initialRoomCode?: string;
@@ -12,6 +13,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
   const [roomCode, setRoomCode] = useState(initialRoomCode);
   const [loading, setLoading] = useState(false);
   const [connectTimeout, setConnectTimeout] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   // show error if server takes too long
   useEffect(() => {
@@ -99,7 +101,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
         )}
 
         {mode === 'INITIAL' && (
-          <div className="w-full flex flex-col gap-4">
+          <div className="w-full flex flex-col gap-3">
             <button
               onClick={() => setMode('CREATE')}
               className="w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-amber-500/20"
@@ -111,6 +113,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
               className="w-full bg-slate-800 hover:bg-slate-700 active:bg-slate-850 text-slate-200 font-bold py-3.5 rounded-xl border border-slate-700 transition-all"
             >
               JOIN GAME
+            </button>
+            <button
+              onClick={() => setShowHowToPlay(true)}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold py-3 rounded-xl border border-slate-800 flex items-center justify-center gap-2 text-sm transition-all"
+            >
+              <span>📖 How to Play</span>
             </button>
           </div>
         )}
@@ -195,6 +203,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
           </form>
         )}
       </div>
+
+      <HowToPlayModal isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
     </div>
   );
 };

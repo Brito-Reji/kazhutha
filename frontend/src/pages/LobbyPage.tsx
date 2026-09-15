@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useSocket } from '../context/SocketContext';
-import { Copy, Share2, Check, UserX, LogOut } from 'lucide-react';
+import { Copy, Share2, Check, UserX, LogOut, HelpCircle } from 'lucide-react';
+import { HowToPlayModal } from '../components/HowToPlayModal';
 
 export const LobbyPage: React.FC = () => {
   const { room, playerId, startGame, leaveRoom, kickPlayer, error } = useSocket();
   const [copied, setCopied] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   if (!room) return null;
 
@@ -42,18 +44,28 @@ export const LobbyPage: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-extrabold text-amber-400">Game Lobby</h2>
-          <button
-            onClick={() => {
-              if (window.confirm('Are you sure you want to leave the lobby?')) {
-                leaveRoom();
-              }
-            }}
-            className="flex items-center gap-1 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
-            title="Quit Lobby"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Quit</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowHowToPlay(true)}
+              className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              title="How to Play"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+              <span>Rules</span>
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm('Are you sure you want to leave the lobby?')) {
+                  leaveRoom();
+                }
+              }}
+              className="flex items-center gap-1 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              title="Quit Lobby"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Quit</span>
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -167,6 +179,8 @@ export const LobbyPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <HowToPlayModal isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
     </div>
   );
 };

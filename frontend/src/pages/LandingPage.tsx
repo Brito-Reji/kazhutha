@@ -7,10 +7,23 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', onJoined }) => {
-  const { createRoom, joinRoom, playerName, setPlayerName, error, setError } = useSocket();
+  const { createRoom, joinRoom, playerName, setPlayerName, error, setError, isConnected } = useSocket();
   const [mode, setMode] = useState<'INITIAL' | 'CREATE' | 'JOIN'>(initialRoomCode ? 'JOIN' : 'INITIAL');
   const [roomCode, setRoomCode] = useState(initialRoomCode);
   const [loading, setLoading] = useState(false);
+  const [connectTimeout, setConnectTimeout] = useState(false);
+
+  // show error if server takes too long
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!isConnected) setConnectTimeout(true);
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [isConnected]);
+
+  useEffect(() => {
+    if (isConnected) setConnectTimeout(false);
+  }, [isConnected]);
 
   useEffect(() => {
     if (initialRoomCode) {
@@ -21,14 +34,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isConnected) return setError('Still connecting to server, please wait...');
     if (!playerName.trim()) return setError('Please enter your name');
 
     setLoading(true);
     try {
       await createRoom(playerName.trim());
       onJoined();
-    } catch (err) {
-      // Error handled in context
+    } catch {
+      // handled in context
     } finally {
       setLoading(false);
     }
@@ -36,6 +50,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isConnected) return setError('Still connecting to server, please wait...');
     if (!playerName.trim()) return setError('Please enter your name');
     if (!roomCode.trim()) return setError('Please enter game code');
 
@@ -43,8 +58,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
     try {
       await joinRoom(roomCode.trim().toUpperCase(), playerName.trim());
       onJoined();
-    } catch (err) {
-      // Error handled in context
+    } catch {
+      // handled in context
     } finally {
       setLoading(false);
     }
@@ -62,6 +77,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
             Kerala Real-Time Multiplayer Card Game
           </p>
         </div>
+
+        {/* server connection status */}
+        {!isConnected && !connectTimeout && (
+          <div className="w-full bg-slate-800 border border-slate-700 text-slate-300 text-xs px-3 py-2 rounded-lg mb-4 text-center flex items-center justify-center gap-2">
+            <span className="animate-spin inline-block w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full" />
+            Connecting to server...
+          </div>
+        )}
+
+        {connectTimeout && !isConnected && (
+          <div className="w-full bg-red-500/20 border border-red-500/50 text-red-300 text-xs px-3 py-2 rounded-lg mb-4 text-center">
+            ⚠️ Server is waking up (free tier). Please wait a moment and try again.
+          </div>
+        )}
 
         {error && (
           <div className="w-full bg-red-500/20 border border-red-500/50 text-red-300 text-xs px-3 py-2 rounded-lg mb-4 text-center">

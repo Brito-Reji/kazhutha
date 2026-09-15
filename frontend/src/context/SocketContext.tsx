@@ -19,11 +19,15 @@ interface SocketContextType {
   playAgain: () => void;
   declareMalathi: () => void;
   ping: number;
+  isConnected: boolean;
 }
 
 const SocketContext = createContext<SocketContextType | null>(null);
 
-const SOCKET_SERVER_URL = window.location.origin;
+// backend url — set VITE_BACKEND_URL in Vercel env vars for prod
+const SOCKET_SERVER_URL =
+  import.meta.env.VITE_BACKEND_URL ||
+  'https://kazhutha-5p5r.onrender.com';
 
 // get url room id
 function getRoomIdFromUrl(): string | null {
@@ -77,18 +81,21 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('kazhutha_username') || '');
   const [error, setError] = useState<string | null>(null);
   const [ping, setPing] = useState<number>(0);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   useEffect(() => {
     const sessionToken = getOrCreateSessionToken();
     const newSocket = io(SOCKET_SERVER_URL, {
       autoConnect: true,
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      timeout: 10000,
     });
 
     setSocket(newSocket);
 
     // socket connection
     newSocket.on('connect', () => {
+      setIsConnected(true);
       setPlayerId(newSocket.id || null);
 
       const urlRoomId = getRoomIdFromUrl();
@@ -105,6 +112,14 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       } else {
         setRoom(null);
       }
+    });
+
+    newSocket.on('disconnect', () => {
+      setIsConnected(false);
+    });
+
+    newSocket.on('connect_error', () => {
+      setIsConnected(false);
     });
 
     // handle url change
@@ -281,6 +296,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         playAgain,
         declareMalathi,
         ping,
+        isConnected,
       }}
     >
       {children}

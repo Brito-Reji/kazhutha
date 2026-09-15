@@ -14,7 +14,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
   const tabs = [
     { title: '🎯 Goal', id: 'goal' },
     { title: '🃏 Matching Suits', id: 'suits' },
-    { title: '⚡ The Cut (Kettu)', id: 'cut' },
+    { title: '⚡ The Cut (Vettu)', id: 'cut' },
     { title: '💡 Quick Example', id: 'example' },
   ];
 
@@ -112,7 +112,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
                 <Zap className="w-6 h-6 text-red-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-red-400 text-base mb-1">Cutting (Kettu)</h4>
+                  <h4 className="font-bold text-red-400 text-base mb-1">Cutting (Vettu)</h4>
                   <p className="text-xs text-slate-300 leading-relaxed">
                     If you <strong className="text-red-300">do not have</strong> any cards of the lead suit, you can play <strong className="text-red-300">ANY card</strong> from another suit!
                   </p>

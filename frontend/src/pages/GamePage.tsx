@@ -8,49 +8,41 @@ import type { Card as CardType } from '../types';
 export const GamePage: React.FC = () => {
   const { room, playerId, playCard, leaveRoom, declareMalathi, error } = useSocket();
 
+  const [isPlayingCard, setIsPlayingCard] = React.useState(false);
+  const [showQuitConfirm, setShowQuitConfirm] = React.useState(false);
+  const [showMalathiConfirm, setShowMalathiConfirm] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsPlayingCard(false);
+  }, [room?.centerCards, room?.currentTurnId]);
+
   if (!room) return null;
 
   const me = room.players.find((p) => p.id === playerId);
   const isSpectator = me?.isSpectator ?? false;
   const canDeclareMalathi = !isSpectator && room.state === 'PLAYING' && me && me.hand && me.hand.length > 0;
 
-  // Active players in game in exact left-to-right turn order
   const activePlayers = room.players.filter(p => !p.isSpectator);
 
   const isMyTurn = !isSpectator && room.currentTurnId === playerId;
   const currentTurnPlayer = room.players.find((p) => p.id === room.currentTurnId);
 
-  const [isPlayingCard, setIsPlayingCard] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsPlayingCard(false);
-  }, [room?.centerCards, room?.currentTurnId]);
-
-  // Helper to find played card for any player in the current trick
+  // find played card for a player in current trick
   const getPlayedCard = (pId: string) => {
     return room.centerCards.find((c) => c.playerId === pId)?.card;
   };
 
-  // Check if a specific card in hand is playable according to rules
   const isCardPlayable = (card: CardType): boolean => {
     if (isSpectator || !isMyTurn || !me || !me.hand) return false;
-
-    // Prevent playing multiple cards in the same trick
     if (playerId && getPlayedCard(playerId)) return false;
-
-    // Prevent playing if trick is full or Vettu cut is clearing
     if (room.centerCards.length >= activePlayers.length) return false;
     if (room.ledSuit && room.centerCards.some((c) => c.card.suit !== room.ledSuit)) return false;
 
-    if (room.centerCards.length === 0) {
-      return true;
-    }
+    if (room.centerCards.length === 0) return true;
 
     if (room.ledSuit) {
       const hasLedSuit = me.hand.some((c) => c.suit === room.ledSuit);
-      if (hasLedSuit) {
-        return card.suit === room.ledSuit;
-      }
+      if (hasLedSuit) return card.suit === room.ledSuit;
       return true;
     }
 
@@ -87,11 +79,7 @@ export const GamePage: React.FC = () => {
 
           {canDeclareMalathi && (
             <button
-              onClick={() => {
-                if (window.confirm('Are you sure you want to call Malathi and accept defeat as Kazhutha for this round?')) {
-                  declareMalathi();
-                }
-              }}
+              onClick={() => setShowMalathiConfirm(true)}
               className="flex items-center gap-1 bg-amber-600/90 hover:bg-amber-600 text-amber-950 border border-amber-400 text-xs font-black px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
               title="Call Malathi (Accept Defeat)"
             >
@@ -101,11 +89,7 @@ export const GamePage: React.FC = () => {
           )}
 
           <button
-            onClick={() => {
-              if (window.confirm('Are you sure you want to quit the game?')) {
-                leaveRoom();
-              }
-            }}
+            onClick={() => setShowQuitConfirm(true)}
             className="flex items-center gap-1 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
             title="Quit Game"
           >
@@ -115,7 +99,53 @@ export const GamePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Spectator Notification Banner */}
+      {/* Quit confirm banner */}
+      {showQuitConfirm && (
+        <div className="bg-red-950 border border-red-500 rounded-xl px-4 py-3 mt-2 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span className="text-red-200 text-xs font-bold text-center sm:text-left">
+            Are you sure you want to quit?
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { leaveRoom(); setShowQuitConfirm(false); }}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-4 py-1.5 rounded-lg"
+            >
+              Yes, Quit
+            </button>
+            <button
+              onClick={() => setShowQuitConfirm(false)}
+              className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs px-4 py-1.5 rounded-lg"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Malathi confirm banner */}
+      {showMalathiConfirm && (
+        <div className="bg-amber-950 border border-amber-500 rounded-xl px-4 py-3 mt-2 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span className="text-amber-200 text-xs font-bold text-center sm:text-left">
+            🏳️ Call Malathi and accept defeat as Kazhutha?
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { declareMalathi(); setShowMalathiConfirm(false); }}
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-1.5 rounded-lg"
+            >
+              Yes, Malathi
+            </button>
+            <button
+              onClick={() => setShowMalathiConfirm(false)}
+              className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs px-4 py-1.5 rounded-lg"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Spectator banner */}
       {isSpectator && (
         <div className="bg-amber-950 border border-amber-500 text-amber-200 text-xs sm:text-sm px-3 py-2 rounded-lg my-1 text-center font-bold animate-pulse">
           👁 SPECTATING GAME — YOU WILL JOIN THE NEXT ROUND
@@ -128,7 +158,7 @@ export const GamePage: React.FC = () => {
         </div>
       )}
 
-      {/* Turn Order Header Label */}
+      {/* Turn order label */}
       <div className="flex justify-between items-center mt-3 px-1">
         <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
           Turn Order (Left ➔ Right)
@@ -138,7 +168,7 @@ export const GamePage: React.FC = () => {
         </span>
       </div>
 
-      {/* Left-to-Right Players Sequence Bar */}
+      {/* Players sequence bar */}
       <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto py-2 px-1 scrollbar-thin my-1">
         {activePlayers.map((p, idx) => (
           <React.Fragment key={p.id}>
@@ -155,23 +185,20 @@ export const GamePage: React.FC = () => {
         ))}
       </div>
 
-      {/* Center Table Surface */}
+      {/* Center table */}
       <div className="flex-1 bg-emerald-900 border-2 border-emerald-700 rounded-2xl p-4 flex flex-col items-center justify-center my-3 relative min-h-[220px] md:min-h-[320px] shadow-inner">
-        {/* Led Suit Indicator */}
         {room.ledSuit && (
           <div className="absolute top-3 left-4 text-xs sm:text-sm font-bold text-emerald-200 bg-emerald-950 px-3 py-1 rounded-full border border-emerald-700">
             Led Suit: <span className="text-white font-extrabold">{room.ledSuit}</span>
           </div>
         )}
 
-        {/* Round Outcome Banner */}
         {room.lastTrickMessage && (
           <div className="mb-3 px-4 py-2 bg-amber-900 border border-amber-400 rounded-lg text-amber-200 text-xs sm:text-sm font-extrabold text-center z-20 shadow-md">
             {room.lastTrickMessage}
           </div>
         )}
 
-        {/* Stacked Center Cards Played */}
         {room.centerCards.length === 0 ? (
           <div className="text-center text-emerald-200 text-xs sm:text-sm font-medium italic">
             {isMyTurn ? 'Lead any card to start the round' : 'Waiting for lead card...'}
@@ -197,7 +224,7 @@ export const GamePage: React.FC = () => {
         )}
       </div>
 
-      {/* Turn Banner */}
+      {/* Turn banner */}
       <div className="my-2 flex items-center justify-between gap-3">
         <div
           className={`flex-1 py-2.5 px-4 rounded-xl text-center font-extrabold text-xs sm:text-sm uppercase tracking-wider transition-all ${
@@ -215,7 +242,6 @@ export const GamePage: React.FC = () => {
             : `Waiting for ${currentTurnPlayer?.name ?? 'opponent'}...`}
         </div>
 
-        {/* You Played Badge */}
         {myPlayedCard && (
           <div className="bg-slate-900 border border-amber-500 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-black">
             <span className="text-[10px] sm:text-xs text-slate-400 uppercase">You:</span>
@@ -224,7 +250,7 @@ export const GamePage: React.FC = () => {
         )}
       </div>
 
-      {/* Your Hand Container */}
+      {/* Your hand */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 sm:p-4 flex flex-col">
         {isSpectator ? (
           <div className="w-full text-center py-4 text-xs sm:text-sm text-amber-300 font-extrabold">

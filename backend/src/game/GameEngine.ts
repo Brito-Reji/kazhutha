@@ -139,9 +139,7 @@ export class GameEngine {
     if (!room) return null;
 
     const player = room.players.find(p => p.id === playerId);
-    if (player) {
-      player.isConnected = false;
-    }
+    if (!player) return room;
 
     if (room.state === 'LOBBY') {
       room.players = room.players.filter(p => p.id !== playerId);
@@ -149,9 +147,28 @@ export class GameEngine {
         const first = room.players[0];
         if (first) first.isHost = true;
       }
+    } else if (room.state === 'PLAYING') {
+      // was it their turn?
+      const wasTheirTurn = room.currentTurnId === playerId;
+
+      // remove their card from center if played
+      room.centerCards = room.centerCards.filter(c => c.playerId !== playerId);
+
+      // make them a spectator so game continues
+      player.isConnected = false;
+      player.hand = [];
+      player.isSpectator = true;
+
+      if (wasTheirTurn) {
+        room.currentTurnId = this.getNextPlayerId(room, playerId);
+      }
+
+      this.checkWinner(room);
+    } else {
+      player.isConnected = false;
     }
 
-    if (room.players.length === 0 || room.players.every(p => !p.isConnected)) {
+    if (room.players.every(p => !p.isConnected)) {
       setTimeout(() => {
         const r = this.getRoom(roomId);
         if (r && r.players.every(p => !p.isConnected)) {
@@ -162,6 +179,7 @@ export class GameEngine {
 
     return room;
   }
+
 
   kickPlayer(roomId: string, hostSocketId: string, targetPlayerId: string): Room {
     const room = this.getRoom(roomId);

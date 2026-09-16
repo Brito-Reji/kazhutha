@@ -4,23 +4,34 @@ import { LandingPage } from './pages/LandingPage';
 import { LobbyPage } from './pages/LobbyPage';
 import { GamePage } from './pages/GamePage';
 import { ResultPage } from './pages/ResultPage';
+import { AdminPage } from './pages/AdminPage';
 
 const MainContent: React.FC = () => {
   const { room } = useSocket();
   const [initialRoomCode, setInitialRoomCode] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pathParts = window.location.pathname.split('/');
+    return pathParts[1] === 'admin' || urlParams.has('admin');
+  });
 
   useEffect(() => {
-    // parse room code from url
+    // parse url
     const parseUrlCode = () => {
       const urlParams = new URLSearchParams(window.location.search);
+      const pathParts = window.location.pathname.split('/');
+      
+      if (pathParts[1] === 'admin' || urlParams.has('admin')) {
+        setIsAdmin(true);
+        return;
+      }
+
+      setIsAdmin(false);
       const joinCode = urlParams.get('join');
       if (joinCode) {
         setInitialRoomCode(joinCode.toUpperCase());
-      } else {
-        const pathParts = window.location.pathname.split('/');
-        if (pathParts[1] === 'join' && pathParts[2]) {
-          setInitialRoomCode(pathParts[2].toUpperCase());
-        }
+      } else if (pathParts[1] === 'join' && pathParts[2]) {
+        setInitialRoomCode(pathParts[2].toUpperCase());
       }
     };
 
@@ -28,6 +39,10 @@ const MainContent: React.FC = () => {
     window.addEventListener('popstate', parseUrlCode);
     return () => window.removeEventListener('popstate', parseUrlCode);
   }, []);
+
+  if (isAdmin) {
+    return <AdminPage />;
+  }
 
   if (!room) {
     return (

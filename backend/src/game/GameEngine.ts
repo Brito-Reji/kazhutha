@@ -64,6 +64,16 @@ export class GameEngine {
     return this.rooms.get(roomId);
   }
 
+  // get all rooms
+  getAllRooms(): Room[] {
+    return Array.from(this.rooms.values());
+  }
+
+  // delete room
+  deleteRoom(roomId: string): boolean {
+    return this.rooms.delete(roomId);
+  }
+
   addPlayer(roomId: string, playerId: string, sessionToken: string, name: string): Room {
     let room = this.getRoom(roomId);
     if (!room) {
